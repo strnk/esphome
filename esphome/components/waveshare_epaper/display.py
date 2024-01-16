@@ -73,9 +73,13 @@ WaveshareEPaper2P13InDKE = waveshare_epaper_ns.class_(
     "WaveshareEPaper2P13InDKE", WaveshareEPaper
 )
 GDEW0154M09 = waveshare_epaper_ns.class_("GDEW0154M09", WaveshareEPaper)
+WaveshareEPaperSSD1681 = waveshare_epaper_ns.class_(
+    "WaveshareEPaperSSD1681", WaveshareEPaper
+)
 
 WaveshareEPaperTypeAModel = waveshare_epaper_ns.enum("WaveshareEPaperTypeAModel")
 WaveshareEPaperTypeBModel = waveshare_epaper_ns.enum("WaveshareEPaperTypeBModel")
+WaveshareEPaperSSD1681Model = waveshare_epaper_ns.enum("WaveshareEPaperSSD1681Model")
 
 MODELS = {
     "1.54in": ("a", WaveshareEPaperTypeAModel.WAVESHARE_EPAPER_1_54_IN),
@@ -105,6 +109,7 @@ MODELS = {
     "7.50in-hd-b": ("b", WaveshareEPaper7P5InHDB),
     "2.13in-ttgo-dke": ("c", WaveshareEPaper2P13InDKE),
     "1.54in-m5coreink-m09": ("c", GDEW0154M09),
+    "1.54inbv2": ("d", WaveshareEPaperSSD1681Model.WAVESHARE_EPAPER_1_54_IN_B_V2),
 }
 
 
@@ -153,6 +158,9 @@ async def to_code(config):
     elif model_type in ("b", "c"):
         rhs = model.new()
         var = cg.Pvariable(config[CONF_ID], rhs, model)
+    elif model_type == "d":
+        rhs = WaveshareEPaperSSD1681.new(model)
+        var = cg.Pvariable(config[CONF_ID], rhs, WaveshareEPaperSSD1681)
     else:
         raise NotImplementedError()
 

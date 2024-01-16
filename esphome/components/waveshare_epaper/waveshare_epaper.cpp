@@ -2284,5 +2284,222 @@ void WaveshareEPaper2P13InDKE::set_full_update_every(uint32_t full_update_every)
   this->full_update_every_ = full_update_every;
 }
 
+
+// ========================================================
+//                       Type 3-colors
+// ========================================================
+
+WaveshareEPaperSSD1681::WaveshareEPaperSSD1681(WaveshareEPaperSSD1681Model model) : model_(model) {}
+
+void WaveshareEPaperSSD1681::initialize() { 
+  this->reset_();
+
+  // SWRESET
+  this->command(SSD1681::SW_RESET);  
+  if (!this->wait_until_idle_()) {
+    this->status_set_warning();
+  }
+
+  // Clear screen
+  // Auto Write RED RAM for Regular Pattern
+  this->command(0x46);
+  this->data(0xF7);
+  if (!this->wait_until_idle_()) {
+    this->status_set_warning();
+  }
+
+  // Auto Write BW RAM for Regular Pattern
+  this->command(0x47);
+  this->data(0xF7);
+  if (!this->wait_until_idle_()) {
+    this->status_set_warning();
+  }
+
+  this->deep_sleep();
+}
+
+void WaveshareEPaperSSD1681::dump_config() {
+  LOG_DISPLAY("", "Waveshare E-Paper", this);
+  switch (this->model_) {
+    case WAVESHARE_EPAPER_1_54_IN_B_V2:
+      ESP_LOGCONFIG(TAG, "  Model: 1.54inBV2");
+      break;
+  }
+  ESP_LOGCONFIG(TAG, "  Full Update Every: %" PRIu32, this->full_update_every_);
+  LOG_PIN("  Reset Pin: ", this->reset_pin_);
+  LOG_PIN("  DC Pin: ", this->dc_pin_);
+  LOG_PIN("  Busy Pin: ", this->busy_pin_);
+  LOG_UPDATE_INTERVAL(this);
+}
+
+void HOT WaveshareEPaperSSD1681::display() {
+  bool full_update = this->at_update_ == 0;
+  this->at_update_ = (this->at_update_ + 1) % this->full_update_every_;
+
+  ESP_LOGI(TAG, "SSD1681: wake-up");
+  this->reset_();
+
+  if (!this->wait_until_idle_()) {
+    this->status_set_warning();
+  }
+
+  this->command(SSD1681::SW_RESET);
+
+  if (!this->wait_until_idle_()) {
+    this->status_set_warning();
+  }
+
+  this->command(SSD1681::DRIVER_OUTPUT_CONTROL);
+  this->data(this->get_height_internal() - 1);
+  this->data((this->get_height_internal() - 1) >> 8);
+  this->data(0x00);  // ? GD = 0, SM = 0, TB = 0
+
+  this->command(SSD1681::DATA_ENTRY_MODE_SETTING);
+  this->data(0x03);  // y increment, x increment
+
+  this->command(SSD1681::BORDER_WAVEFORM_CONTROL);
+  this->data(0x05);  // follow LUT, LUT1
+
+  this->command(SSD1681::TEMPERATURE_SENSOR_CONTROL);
+  this->data(0x80); // internal sensor
+
+  if (!this->wait_until_idle_()) {
+    this->status_set_warning();
+  }
+
+  // Set x & y regions we want to write to (full)
+  // COMMAND SET RAM X ADDRESS START END POSITION
+  this->command(SSD1681::SET_RAM_X_ADDR_START_END);
+  this->data(0x00);
+  this->data((this->get_width_internal() - 1) >> 3);
+
+  // COMMAND SET RAM Y ADDRESS START END POSITION
+  this->command(SSD1681::SET_RAM_Y_ADDR_START_END);
+  this->data(0x00);
+  this->data(0x00);
+  this->data(this->get_height_internal() - 1);
+  this->data((this->get_height_internal() - 1) >> 8);
+
+  // COMMAND SET RAM X ADDRESS COUNTER
+  this->command(SSD1681::SET_RAM_X_ADDR_COUNTER);
+  this->data(0x00);
+
+  // COMMAND SET RAM Y ADDRESS COUNTER
+  this->command(SSD1681::SET_RAM_Y_ADDR_COUNTER);
+  this->data(0x00);
+  this->data(0x00);
+
+  // COMMAND WRITE RAM
+  this->command(SSD1681::WRITE_RAM_BW);
+  this->start_data_();
+  this->write_array(this->buffer_, this->get_buffer_length_()/2);
+  this->end_data_();
+
+  this->command(SSD1681::WRITE_RAM_RED);
+  this->start_data_();
+  this->write_array(this->buffer_ + this->get_buffer_length_()/2, this->get_buffer_length_()/2);
+  this->end_data_();
+
+  // COMMAND DISPLAY UPDATE CONTROL 2
+  this->command(SSD1681::DISPLAY_UPDATE_CONTROL_2);
+  this->data(full_update ? 0xF7 : 0xFF);
+
+  // COMMAND MASTER ACTIVATION
+  this->command(SSD1681::MASTER_ACTIVATION);
+
+  if (!this->wait_until_idle_()) {
+    this->status_set_warning();
+    ESP_LOGE(TAG, "CMD 20 failed");
+  }
+  else
+    this->status_clear_warning();
+
+  if (this->deep_sleep_between_updates_) {
+    ESP_LOGI(TAG, "Set the display back to deep sleep");
+    this->deep_sleep();
+  }
+}
+
+int WaveshareEPaperSSD1681::get_width_internal() {
+  switch (this->model_) {
+    case WAVESHARE_EPAPER_1_54_IN_B_V2:
+      return 200;
+  }
+  return 0;
+}
+
+int WaveshareEPaperSSD1681::get_height_internal() {
+  switch (this->model_) {
+    case WAVESHARE_EPAPER_1_54_IN_B_V2:
+      return 200;
+  }
+  return 0;
+}
+
+void WaveshareEPaperSSD1681::set_full_update_every(uint32_t full_update_every) {
+  this->full_update_every_ = full_update_every;
+}
+
+
+void WaveshareEPaperSSD1681::get_buffer_states_for_color(Color& color, bool& bw, bool& thirdColor) {
+  if (!color.is_on())
+  {
+    bw = true;
+    thirdColor = false;
+  }
+  else if (color == Color::WHITE)
+  {
+    bw = false;
+    thirdColor = false;
+  }
+  else // everything non white or black is set to 3rd color
+  {
+    bw = false;
+    thirdColor = true;
+  }
+}
+
+void WaveshareEPaperSSD1681::fill(Color color) {
+  uint8_t bw_fill, thirdColor_fill;
+
+  bool bw, thirdColor;
+  get_buffer_states_for_color(color, bw, thirdColor);
+
+  bw_fill = bw ? 0xFF : 0x00;
+  thirdColor_fill = thirdColor ? 0xFF : 0x00;
+
+  for (uint32_t i = 0; i < this->get_buffer_length_()/2; i++)
+    this->buffer_[i] = bw_fill;
+    
+  for (uint32_t i = 0; i < this->get_buffer_length_()/2; i++)
+    this->buffer_[i + get_buffer_length_()/2] = thirdColor_fill;
+}
+
+void HOT WaveshareEPaperSSD1681::draw_absolute_pixel_internal(int x, int y, Color color) {
+  if (x >= this->get_width_internal() || y >= this->get_height_internal() || x < 0 || y < 0)
+    return;
+
+  const uint32_t pos = (x + y * this->get_width_controller()) / 8u;
+  const uint8_t subpos = x & 0x07;
+
+  bool bw, thirdColor;
+  get_buffer_states_for_color(color, bw, thirdColor);
+
+  if (bw)
+    this->buffer_[pos] |= 0x80 >> subpos;
+  else
+    this->buffer_[pos] &= ~(0x80 >> subpos);
+
+  if (thirdColor)
+    this->buffer_[pos + get_buffer_length_()/2] |= 0x80 >> subpos;
+  else
+    this->buffer_[pos + get_buffer_length_()/2] &= ~(0x80 >> subpos);
+}
+
+uint32_t WaveshareEPaperSSD1681::get_buffer_length_() {
+  return 2 * this->get_width_controller() * this->get_height_internal() / 8u;
+}
+
+
 }  // namespace waveshare_epaper
 }  // namespace esphome

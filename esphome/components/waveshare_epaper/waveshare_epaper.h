@@ -28,7 +28,7 @@ class WaveshareEPaper : public display::DisplayBuffer,
 
   void fill(Color color) override;
 
-  void setup() override {
+  void setup() {
     this->setup_pins_();
     this->initialize();
   }
@@ -44,7 +44,7 @@ class WaveshareEPaper : public display::DisplayBuffer,
 
   void setup_pins_();
 
-  void reset_() {
+  virtual void reset_() {
     if (this->reset_pin_ != nullptr) {
       this->reset_pin_->digital_write(false);
       delay(reset_duration_);  // NOLINT
@@ -55,7 +55,7 @@ class WaveshareEPaper : public display::DisplayBuffer,
 
   virtual int get_width_controller() { return this->get_width_internal(); };
 
-  uint32_t get_buffer_length_();
+  virtual uint32_t get_buffer_length_();
   uint32_t reset_duration_{200};
 
   void start_command_();
@@ -612,6 +612,129 @@ class WaveshareEPaper2P13InDKE : public WaveshareEPaper {
 
   uint32_t full_update_every_{30};
   uint32_t at_update_{0};
+};
+
+enum WaveshareEPaperSSD1681Model {
+  WAVESHARE_EPAPER_1_54_IN_B_V2
+};
+
+namespace SSD1681
+{
+typedef enum Command  {
+  DRIVER_OUTPUT_CONTROL = 0x01,
+  GATE_DRIVING_VOLTAGE_CONTROL = 0x02,
+  SOURCE_DRIVING_VOLTAGE_CONTROL = 0x03,
+  // 0x04 - 0x07
+  PROGRAM_OTP_INITIAL_CODE_SETTING = 0x08,
+  WRITE_INITIAL_CODE_SETTING_REGISTER = 0x09,
+  READ_INITIAL_CODE_SETTING_REGISTER = 0x0A,
+  // 0x0B
+  BOOSTER_SOFT_START_CONTROL = 0x0C,
+  // 0x0D - 0x0F
+  DEEP_SLEEP_MODE = 0x10,
+  DATA_ENTRY_MODE_SETTING = 0x11,
+  SW_RESET = 0x12,
+  // 0x13
+  HV_READY_DETECTION = 0x14,
+  VCI_DETECTION = 0x15,
+  // 0x16-0x17
+  TEMPERATURE_SENSOR_CONTROL = 0x18, 
+  // 0x19
+  TEMPERATURE_REGISTER_WRITE = 0x1A,
+  TEMPERATURE_REGISTER_READ = 0x1B,
+  TEMPERATURE_EXT_SENSOR_WRITE = 0x1C,
+ // 0x1D-0x1F
+  MASTER_ACTIVATION = 0x20,
+  DISPLAY_UPDATE_CONTROL_1 = 0x21,
+  DISPLAY_UPDATE_CONTROL_2 = 0x22,
+  // 0x23
+  WRITE_RAM_BW = 0x24,
+  // 0x25
+  WRITE_RAM_RED = 0x26,
+  READ_RAM = 0x27,
+  VCOM_SENSE = 0x28,
+  VCOM_SENSE_DURATION = 0x29,
+  PROGRAM_VCOM_OTP = 0x2A,
+  WRITE_VCOM_CONTROL_REGISTER = 0x2B,
+  WRITE_VCOM_REGISTER = 0x2C,
+  READ_OTP_DISPLAY_OPTION_REGISTER = 0x2D,
+  READ_OTP_USER_ID_REGISTER = 0x2C,
+  // 0x2D - 0x2E
+  READ_STATUS_BIT = 0x2F,
+  PROGRAM_WS_OTP = 0x30,
+  LOAD_WS_OTP = 0x31,
+  WRITE_LUT_REGISTER = 0x32,
+  // 0x33
+  CRC_CALCULATION = 0x34,
+  CRC_STATUS_READ = 0x35,
+  PROGRAM_OTP_SELECTION = 0x36,
+  WRITE_OTP_DISPLAY_OPTION_REGISTER = 0x37,
+  WRITE_OTP_USE_ID_REGISTER = 0x38,
+  PROGRAM_OTP_MOD = 0x39,
+  // 0x3A-0x3B
+  BORDER_WAVEFORM_CONTROL = 0x3C,
+  // 0x3D-0x3E
+  END_OPTION = 0x3F,
+  // 0x40
+  READ_RAM_OPTION = 0x41,
+  // 0x42-0x43
+  SET_RAM_X_ADDR_START_END = 0x44,
+  SET_RAM_Y_ADDR_START_END = 0x45,
+  AUTO_WRITE_RAM_RED = 0x46,
+  AUTO_WRITE_RAM_BW = 0x47,
+  // 0x48-0x4D
+  SET_RAM_X_ADDR_COUNTER = 0x4E,
+  SET_RAM_Y_ADDR_COUNTER = 0x4F,
+  // 0x50-0x7E
+  NOP
+} Command_t; // enum Command
+}; // namespace SSD1681
+
+class WaveshareEPaperSSD1681 : public WaveshareEPaper {
+ public:
+  WaveshareEPaperSSD1681(WaveshareEPaperSSD1681Model model);
+
+  void initialize() override;
+  void dump_config() override;
+  void display() override;
+
+  void deep_sleep() override {
+    this->command(0x10);
+    this->data(0x01);
+    delay(10);
+  }
+
+  void set_full_update_every(uint32_t full_update_every);
+
+  //  Display
+  display::DisplayType get_display_type() override { return display::DisplayType::DISPLAY_TYPE_COLOR; }
+
+ protected:
+  void reset_() override {
+    if (this->reset_pin_ != nullptr) {
+      this->reset_pin_->digital_write(true);
+      delay(10);  // NOLINT
+      this->reset_pin_->digital_write(false);
+      delay(this->reset_duration_);
+      this->reset_pin_->digital_write(true);
+      delay(10);  // NOLINT
+    }
+  }
+
+  int get_width_internal() override;
+  int get_height_internal() override;
+
+  void get_buffer_states_for_color(Color& color, bool& bw, bool& thirdColor);
+
+  void fill(Color color) override;
+  void HOT draw_absolute_pixel_internal(int x, int y, Color color) override;
+  uint32_t get_buffer_length_() override;
+  uint32_t idle_timeout_() override { return 10000; };
+
+  uint32_t full_update_every_{30};
+  uint32_t at_update_{0};
+  WaveshareEPaperSSD1681Model model_;
+  bool deep_sleep_between_updates_{false};
 };
 
 }  // namespace waveshare_epaper

@@ -2289,10 +2289,38 @@ void WaveshareEPaper2P13InDKE::set_full_update_every(uint32_t full_update_every)
 //                       Type 3-colors
 // ========================================================
 
+static const SSD1681::LUT_t LUT_WS_1_54_IN_B_V2 = {
+  .raw = {
+//      Group
+//      0     1     2     3     4     5     6     7     8     9     10    11    
+/*LUT0*/0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*LUT1*/0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*LUT2*/0x40, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*LUT3*/0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*LUT4*/0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+//      TPA   TPB   SRAB  TPC   TPD   SRCD  RP
+/*Gr0 */0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*Gr1 */0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*Gr2 */0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*Gr3 */0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*Gr4 */0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*Gr5 */0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*Gr6 */0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*Gr7 */0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*Gr8 */0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 
+/*Gr9 */0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 
+/*Gr10*/0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*Gr11*/0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+/*FR  */0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 
+/*XON  */0x00, 0x00, 
+//      EOPT  VGH   VSH1  VSH2  VSL   VCOM
+        0x22, 0x17, 0x41, 0x00, 0x32, 0x32
+  }
+};
+
 WaveshareEPaperSSD1681::WaveshareEPaperSSD1681(WaveshareEPaperSSD1681Model model) : model_(model) {}
 
 void WaveshareEPaperSSD1681::initialize() { 
-  this->deep_sleep_between_updates_ = true;
   this->fill(Color::WHITE);
 
   this->reset_();
@@ -2441,9 +2469,20 @@ void HOT WaveshareEPaperSSD1681::display() {
   this->write_array(this->buffer_ + this->get_buffer_length_()/2, this->get_buffer_length_()/2);
   this->end_data_();
 
-  // COMMAND DISPLAY UPDATE CONTROL 2
-  this->command(SSD1681::DISPLAY_UPDATE_CONTROL_2);
-  this->data(full_update ? 0xF7 : 0xFF);
+  if (full_update)
+  {
+    // COMMAND DISPLAY UPDATE CONTROL 2
+    this->command(SSD1681::DISPLAY_UPDATE_CONTROL_2);
+    this->data(0xF7);
+  }
+  else
+  {
+    this->loadLUT(LUT_WS_1_54_IN_B_V2);
+
+    // COMMAND DISPLAY UPDATE CONTROL 2
+    this->command(SSD1681::DISPLAY_UPDATE_CONTROL_2);
+    this->data(0xCF);
+  }
 
   // COMMAND MASTER ACTIVATION
   this->command(SSD1681::MASTER_ACTIVATION);
@@ -2565,6 +2604,31 @@ uint32_t WaveshareEPaperSSD1681::idle_timeout_(SSD1681::Command_t command) {
     default:
       return idle_timeout_(); 
   }
+}
+
+void  WaveshareEPaperSSD1681::loadLUT(const SSD1681::LUT_t& lut)
+{
+  this->command(SSD1681::WRITE_LUT_REGISTER);
+  this->start_data_();
+  this->write_array(lut.raw, 153); // NOLINT
+  this->end_data_();
+  
+
+  this->command(SSD1681::END_OPTION);
+  this->data(lut.EOPT);
+
+  this->command(SSD1681::GATE_DRIVING_VOLTAGE_CONTROL);
+  this->data(lut.VGH);
+
+  this->command(SSD1681::SOURCE_DRIVING_VOLTAGE_CONTROL);
+  this->start_data_();
+  this->write_byte(lut.VSH1);
+  this->write_byte(lut.VSH2);
+  this->write_byte(lut.VSL);
+  this->end_data_();
+
+  this->command(SSD1681::WRITE_VCOM_REGISTER);
+  this->data(lut.VCOM);
 }
 
 }  // namespace waveshare_epaper

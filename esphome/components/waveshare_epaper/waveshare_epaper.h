@@ -620,75 +620,175 @@ enum WaveshareEPaperSSD1681Model {
 
 namespace SSD1681
 {
-typedef enum Command  {
-  DRIVER_OUTPUT_CONTROL = 0x01,
-  GATE_DRIVING_VOLTAGE_CONTROL = 0x02,
-  SOURCE_DRIVING_VOLTAGE_CONTROL = 0x03,
-  // 0x04 - 0x07
-  PROGRAM_OTP_INITIAL_CODE_SETTING = 0x08,
-  WRITE_INITIAL_CODE_SETTING_REGISTER = 0x09,
-  READ_INITIAL_CODE_SETTING_REGISTER = 0x0A,
-  // 0x0B
-  BOOSTER_SOFT_START_CONTROL = 0x0C,
-  // 0x0D - 0x0F
-  DEEP_SLEEP_MODE = 0x10,
-  DATA_ENTRY_MODE_SETTING = 0x11,
-  SW_RESET = 0x12,
-  // 0x13
-  HV_READY_DETECTION = 0x14,
-  VCI_DETECTION = 0x15,
-  // 0x16-0x17
-  TEMPERATURE_SENSOR_CONTROL = 0x18, 
-  // 0x19
-  TEMPERATURE_REGISTER_WRITE = 0x1A,
-  TEMPERATURE_REGISTER_READ = 0x1B,
-  TEMPERATURE_EXT_SENSOR_WRITE = 0x1C,
- // 0x1D-0x1F
-  MASTER_ACTIVATION = 0x20,
-  DISPLAY_UPDATE_CONTROL_1 = 0x21,
-  DISPLAY_UPDATE_CONTROL_2 = 0x22,
-  // 0x23
-  WRITE_RAM_BW = 0x24,
-  // 0x25
-  WRITE_RAM_RED = 0x26,
-  READ_RAM = 0x27,
-  VCOM_SENSE = 0x28,
-  VCOM_SENSE_DURATION = 0x29,
-  PROGRAM_VCOM_OTP = 0x2A,
-  WRITE_VCOM_CONTROL_REGISTER = 0x2B,
-  WRITE_VCOM_REGISTER = 0x2C,
-  READ_OTP_DISPLAY_OPTION_REGISTER = 0x2D,
-  READ_OTP_USER_ID_REGISTER = 0x2C,
-  // 0x2D - 0x2E
-  READ_STATUS_BIT = 0x2F,
-  PROGRAM_WS_OTP = 0x30,
-  LOAD_WS_OTP = 0x31,
-  WRITE_LUT_REGISTER = 0x32,
-  // 0x33
-  CRC_CALCULATION = 0x34,
-  CRC_STATUS_READ = 0x35,
-  PROGRAM_OTP_SELECTION = 0x36,
-  WRITE_OTP_DISPLAY_OPTION_REGISTER = 0x37,
-  WRITE_OTP_USE_ID_REGISTER = 0x38,
-  PROGRAM_OTP_MOD = 0x39,
-  // 0x3A-0x3B
-  BORDER_WAVEFORM_CONTROL = 0x3C,
-  // 0x3D-0x3E
-  END_OPTION = 0x3F,
-  // 0x40
-  READ_RAM_OPTION = 0x41,
-  // 0x42-0x43
-  SET_RAM_X_ADDR_START_END = 0x44,
-  SET_RAM_Y_ADDR_START_END = 0x45,
-  AUTO_WRITE_RAM_RED = 0x46,
-  AUTO_WRITE_RAM_BW = 0x47,
-  // 0x48-0x4D
-  SET_RAM_X_ADDR_COUNTER = 0x4E,
-  SET_RAM_Y_ADDR_COUNTER = 0x4F,
-  // 0x50-0x7E
-  NOP,
-  HW_RESET = 0xFF
-} Command_t; // enum Command
+  typedef enum Command  {
+    DRIVER_OUTPUT_CONTROL = 0x01,
+    // 0x02
+    GATE_DRIVING_VOLTAGE_CONTROL = 0x03,
+    SOURCE_DRIVING_VOLTAGE_CONTROL = 0x04,
+    // 0x04 - 0x07
+    PROGRAM_OTP_INITIAL_CODE_SETTING = 0x08,
+    WRITE_INITIAL_CODE_SETTING_REGISTER = 0x09,
+    READ_INITIAL_CODE_SETTING_REGISTER = 0x0A,
+    // 0x0B
+    BOOSTER_SOFT_START_CONTROL = 0x0C,
+    // 0x0D - 0x0F
+    DEEP_SLEEP_MODE = 0x10,
+    DATA_ENTRY_MODE_SETTING = 0x11,
+    SW_RESET = 0x12,
+    // 0x13
+    HV_READY_DETECTION = 0x14,
+    VCI_DETECTION = 0x15,
+    // 0x16-0x17
+    TEMPERATURE_SENSOR_CONTROL = 0x18, 
+    // 0x19
+    TEMPERATURE_REGISTER_WRITE = 0x1A,
+    TEMPERATURE_REGISTER_READ = 0x1B,
+    TEMPERATURE_EXT_SENSOR_WRITE = 0x1C,
+  // 0x1D-0x1F
+    MASTER_ACTIVATION = 0x20,
+    DISPLAY_UPDATE_CONTROL_1 = 0x21,
+    DISPLAY_UPDATE_CONTROL_2 = 0x22,
+    // 0x23
+    WRITE_RAM_BW = 0x24,
+    // 0x25
+    WRITE_RAM_RED = 0x26,
+    READ_RAM = 0x27,
+    VCOM_SENSE = 0x28,
+    VCOM_SENSE_DURATION = 0x29,
+    PROGRAM_VCOM_OTP = 0x2A,
+    WRITE_VCOM_CONTROL_REGISTER = 0x2B,
+    WRITE_VCOM_REGISTER = 0x2C,
+    READ_OTP_DISPLAY_OPTION_REGISTER = 0x2D,
+    READ_OTP_USER_ID_REGISTER = 0x2E,
+    READ_STATUS_BIT = 0x2F,
+    PROGRAM_WS_OTP = 0x30,
+    LOAD_WS_OTP = 0x31,
+    WRITE_LUT_REGISTER = 0x32,
+    // 0x33
+    CRC_CALCULATION = 0x34,
+    CRC_STATUS_READ = 0x35,
+    PROGRAM_OTP_SELECTION = 0x36,
+    WRITE_OTP_DISPLAY_OPTION_REGISTER = 0x37,
+    WRITE_OTP_USE_ID_REGISTER = 0x38,
+    PROGRAM_OTP_MOD = 0x39,
+    // 0x3A-0x3B
+    BORDER_WAVEFORM_CONTROL = 0x3C,
+    // 0x3D-0x3E
+    END_OPTION = 0x3F,
+    // 0x40
+    READ_RAM_OPTION = 0x41,
+    // 0x42-0x43
+    SET_RAM_X_ADDR_START_END = 0x44,
+    SET_RAM_Y_ADDR_START_END = 0x45,
+    AUTO_WRITE_RAM_RED = 0x46,
+    AUTO_WRITE_RAM_BW = 0x47,
+    // 0x48-0x4D
+    SET_RAM_X_ADDR_COUNTER = 0x4E,
+    SET_RAM_Y_ADDR_COUNTER = 0x4F,
+    // 0x50-0x7E
+    NOP,
+    HW_RESET = 0xFF
+  } Command_t; // enum Command
+
+  typedef union LUT_u
+  {
+    struct 
+    {
+      union
+      {
+          struct
+          {
+              union {
+                  struct {
+                      uint8_t A : 2;
+                      uint8_t B : 2;
+                      uint8_t C : 2;
+                      uint8_t D : 2;
+                  } phase;
+
+                  uint8_t raw;
+              } group[12];
+          } VS[5];
+
+          uint8_t raw[60];
+      } VS;
+      
+      struct
+      {
+        uint8_t TPA;
+        uint8_t TPB;
+        uint8_t SRAB;
+        uint8_t TPC;
+        uint8_t TPD;
+        uint8_t SRCD;
+        uint8_t RP;
+      } group[12];
+
+      union
+      {
+          struct
+          {
+              uint8_t FR0 : 4;
+              uint8_t FR1 : 4;
+              uint8_t FR2 : 4;
+              uint8_t FR3 : 4;
+              uint8_t FR4 : 4;
+              uint8_t FR5 : 4;
+              uint8_t FR6 : 4;
+              uint8_t FR7 : 4;
+              uint8_t FR8 : 4;
+              uint8_t FR9 : 4;
+              uint8_t FR10 : 4;
+              uint8_t FR11 : 4;
+          };
+
+          uint8_t raw[6];
+      } FR;
+
+      union
+      {
+          struct 
+          {
+              uint8_t AB0 : 1;
+              uint8_t CD0 : 1;
+              uint8_t AB1 : 1;
+              uint8_t CD1 : 1;
+              uint8_t AB2 : 1;
+              uint8_t CD2 : 1;
+              uint8_t AB3 : 1;
+              uint8_t CD3 : 1;
+              uint8_t AB4 : 1;
+              uint8_t CD4 : 1;
+              uint8_t AB5 : 1;
+              uint8_t CD5 : 1;
+              uint8_t AB6 : 1;
+              uint8_t CD6 : 1;
+              uint8_t AB7 : 1;
+              uint8_t CD7 : 1;
+              uint8_t AB8 : 1;
+              uint8_t CD8 : 1;
+              uint8_t AB9 : 1;
+              uint8_t CD9 : 1;
+              uint8_t AB10 : 1;
+              uint8_t CD10 : 1;
+              uint8_t AB11 : 1;
+              uint8_t CD11 : 1;
+          };
+
+          uint8_t raw[2];
+      } XON;
+      
+      uint8_t EOPT;
+      uint8_t VGH;
+      uint8_t VSH1;
+      uint8_t VSH2;
+      uint8_t VSL;
+      uint8_t VCOM;
+    };
+    
+    uint8_t raw[159];
+  } LUT_t;
+
 }; // namespace SSD1681
 
 class WaveshareEPaperSSD1681 : public WaveshareEPaper {
@@ -700,7 +800,7 @@ class WaveshareEPaperSSD1681 : public WaveshareEPaper {
   void display() override;
 
   void deep_sleep() override {
-    this->command(0x10);
+    this->command(SSD1681::DEEP_SLEEP_MODE);
     this->data(0x01);
     delay(10);
   }
@@ -736,6 +836,8 @@ class WaveshareEPaperSSD1681 : public WaveshareEPaper {
 
   bool wait_until_idle_(SSD1681::Command_t command);
   uint32_t idle_timeout_(SSD1681::Command_t command);
+
+  void loadLUT(const SSD1681::LUT_t& lut);
 
   uint32_t full_update_every_{30};
   uint32_t at_update_{0};

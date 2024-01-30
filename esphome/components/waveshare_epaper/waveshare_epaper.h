@@ -839,6 +839,7 @@ class WaveshareEPaperSSD1681 : public WaveshareEPaper {
 
   void loadLUT(const SSD1681::LUT_t& lut);
 
+  uint32_t init_start_ = 0xFFFFFFFF;
   uint32_t full_update_every_{30};
   uint32_t at_update_{0};
   WaveshareEPaperSSD1681Model model_;

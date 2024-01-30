@@ -2373,18 +2373,7 @@ void WaveshareEPaperSSD1681::initialize() {
 
   // COMMAND MASTER ACTIVATION
   this->command(SSD1681::MASTER_ACTIVATION);
-
-  if (!this->wait_until_idle_(SSD1681::MASTER_ACTIVATION)) {
-    this->status_set_warning();
-    ESP_LOGE(TAG, "CMD 20 failed");
-  }
-  else
-    this->status_clear_warning();
-
-  if (this->deep_sleep_between_updates_) {
-    ESP_LOGI(TAG, "Set the display back to deep sleep");
-    this->deep_sleep();
-  }
+  init_start_ = millis();
 }
 
 void WaveshareEPaperSSD1681::dump_config() {
@@ -2402,15 +2391,38 @@ void WaveshareEPaperSSD1681::dump_config() {
 }
 
 void HOT WaveshareEPaperSSD1681::display() {
+  if (init_start_ > 0)
+  {
+    if (this->busy_pin_->digital_read())
+    {
+      if (millis() - init_start_  > this->idle_timeout_(SSD1681::MASTER_ACTIVATION))
+      {
+        ESP_LOGE(TAG, "Timeout during screen initialization");
+        this->status_set_warning();
+        initialize();
+      }
+
+      return;
+    }
+    else
+    {
+      ESP_LOGI(TAG, "SSD1681: init done");
+      init_start_ = 0;
+      this->status_clear_warning();
+    }
+  }
+  else
+  {
+    ESP_LOGI(TAG, "SSD1681: wake-up");
+    this->reset_();
+
+    if (!this->wait_until_idle_(SSD1681::HW_RESET)) {
+      this->status_set_warning();
+    }
+  }
+
   bool full_update = this->at_update_ == 0;
   this->at_update_ = (this->at_update_ + 1) % this->full_update_every_;
-
-  ESP_LOGI(TAG, "SSD1681: wake-up");
-  this->reset_();
-
-  if (!this->wait_until_idle_(SSD1681::HW_RESET)) {
-    this->status_set_warning();
-  }
 
   this->command(SSD1681::SW_RESET);
 
@@ -2609,11 +2621,9 @@ uint32_t WaveshareEPaperSSD1681::idle_timeout_(SSD1681::Command_t command) {
 void  WaveshareEPaperSSD1681::loadLUT(const SSD1681::LUT_t& lut)
 {
   this->command(SSD1681::WRITE_LUT_REGISTER);
-  this->start_data_();
-  this->write_array(lut.raw, 153); // NOLINT
-  this->end_data_();
+  for (unsigned byte = 0; byte < 153; ++byte)
+    this->data(lut.raw[byte]);
   
-
   this->command(SSD1681::END_OPTION);
   this->data(lut.EOPT);
 

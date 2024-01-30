@@ -2293,6 +2293,7 @@ WaveshareEPaperSSD1681::WaveshareEPaperSSD1681(WaveshareEPaperSSD1681Model model
 
 void WaveshareEPaperSSD1681::initialize() { 
   this->reset_();
+  this->deep_sleep_between_updates_ = true;
 
   // SWRESET
   this->command(SSD1681::SW_RESET);  

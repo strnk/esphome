@@ -2316,7 +2316,42 @@ void WaveshareEPaperSSD1681::initialize() {
     this->status_set_warning();
   }
 
-  this->deep_sleep();
+  this->command(SSD1681::DRIVER_OUTPUT_CONTROL);
+  this->data(this->get_height_internal() - 1);
+  this->data((this->get_height_internal() - 1) >> 8);
+  this->data(0x00);  // ? GD = 0, SM = 0, TB = 0
+
+  this->command(SSD1681::DATA_ENTRY_MODE_SETTING);
+  this->data(0x03);  // y increment, x increment
+
+  this->command(SSD1681::BORDER_WAVEFORM_CONTROL);
+  this->data(0x05);  // follow LUT, LUT1
+
+  this->command(SSD1681::TEMPERATURE_SENSOR_CONTROL);
+  this->data(0x80); // internal sensor
+
+  if (!this->wait_until_idle_()) {
+    this->status_set_warning();
+  }
+
+  // COMMAND DISPLAY UPDATE CONTROL 2
+  this->command(SSD1681::DISPLAY_UPDATE_CONTROL_2);
+  this->data(0xF7);
+
+  // COMMAND MASTER ACTIVATION
+  this->command(SSD1681::MASTER_ACTIVATION);
+
+  if (!this->wait_until_idle_()) {
+    this->status_set_warning();
+    ESP_LOGE(TAG, "CMD 20 failed");
+  }
+  else
+    this->status_clear_warning();
+
+  if (this->deep_sleep_between_updates_) {
+    ESP_LOGI(TAG, "Set the display back to deep sleep");
+    this->deep_sleep();
+  }
 }
 
 void WaveshareEPaperSSD1681::dump_config() {
@@ -2501,6 +2536,32 @@ uint32_t WaveshareEPaperSSD1681::get_buffer_length_() {
   return 2 * this->get_width_controller() * this->get_height_internal() / 8u;
 }
 
+bool WaveshareEPaperSSD1681::wait_until_idle_(SSD1681::Command_t command) {
+  if (this->busy_pin_ == nullptr) {
+    return true;
+  }
+
+  const uint32_t start = millis();
+  while (this->busy_pin_->digital_read()) {
+    if (millis() - start > this->idle_timeout_(command)) {
+      ESP_LOGE(TAG, "Timeout while displaying image!");
+      return false;
+    }
+    delay(10);
+  }
+  return true;
+}
+  
+uint32_t WaveshareEPaperSSD1681::idle_timeout_(SSD1681::Command_t command) { 
+  switch (command)
+  {
+    case SSD1681::MASTER_ACTIVATION:
+      return idle_timeout_() * 10;
+
+    default:
+      return idle_timeout_(); 
+  }
+}
 
 }  // namespace waveshare_epaper
 }  // namespace esphome

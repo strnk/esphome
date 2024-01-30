@@ -40,7 +40,7 @@ class WaveshareEPaper : public display::DisplayBuffer,
  protected:
   void draw_absolute_pixel_internal(int x, int y, Color color) override;
 
-  bool wait_until_idle_();
+  virtual bool wait_until_idle_();
 
   void setup_pins_();
 
@@ -729,7 +729,12 @@ class WaveshareEPaperSSD1681 : public WaveshareEPaper {
   void fill(Color color) override;
   void HOT draw_absolute_pixel_internal(int x, int y, Color color) override;
   uint32_t get_buffer_length_() override;
-  uint32_t idle_timeout_() override { return 10000; };
+
+  bool wait_until_idle_() override { return wait_until_idle_(SSD1681::NOP); }
+  uint32_t idle_timeout_() override { return 10000; }
+
+  bool wait_until_idle_(SSD1681::Command_t command);
+  uint32_t idle_timeout_(SSD1681::Command_t command);
 
   uint32_t full_update_every_{30};
   uint32_t at_update_{0};

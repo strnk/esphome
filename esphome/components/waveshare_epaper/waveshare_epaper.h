@@ -832,7 +832,7 @@ class WaveshareEPaperSSD1681 : public WaveshareEPaper {
   uint32_t get_buffer_length_() override;
 
   bool wait_until_idle_() override { return wait_until_idle_(SSD1681::NOP); }
-  uint32_t idle_timeout_() override { return 10000; }
+  uint32_t idle_timeout_() override { return idle_timeout_(SSD1681::NOP); }
 
   bool wait_until_idle_(SSD1681::Command_t command);
   uint32_t idle_timeout_(SSD1681::Command_t command);

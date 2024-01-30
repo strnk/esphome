@@ -2292,25 +2292,27 @@ void WaveshareEPaper2P13InDKE::set_full_update_every(uint32_t full_update_every)
 WaveshareEPaperSSD1681::WaveshareEPaperSSD1681(WaveshareEPaperSSD1681Model model) : model_(model) {}
 
 void WaveshareEPaperSSD1681::initialize() { 
+  this->fill(Color::WHITE);
+
   this->reset_();
   this->deep_sleep_between_updates_ = true;
 
   // SWRESET
   this->command(SSD1681::SW_RESET);  
-  if (!this->wait_until_idle_()) {
+  if (!this->wait_until_idle_(SSD1681::SW_RESET)) {
     this->status_set_warning();
   }
 
   // Clear screen
   // Auto Write RED RAM for Regular Pattern
-  this->command(0x46);
+  this->command(SSD1681::AUTO_WRITE_RAM_RED);
   this->data(0xF7);
   if (!this->wait_until_idle_()) {
     this->status_set_warning();
   }
 
   // Auto Write BW RAM for Regular Pattern
-  this->command(0x47);
+  this->command(SSD1681::AUTO_WRITE_RAM_BW);
   this->data(0xF7);
   if (!this->wait_until_idle_()) {
     this->status_set_warning();
@@ -2330,7 +2332,7 @@ void WaveshareEPaperSSD1681::initialize() {
   this->command(SSD1681::TEMPERATURE_SENSOR_CONTROL);
   this->data(0x80); // internal sensor
 
-  if (!this->wait_until_idle_()) {
+  if (!this->wait_until_idle_(SSD1681::TEMPERATURE_SENSOR_CONTROL)) {
     this->status_set_warning();
   }
 
@@ -2341,7 +2343,7 @@ void WaveshareEPaperSSD1681::initialize() {
   // COMMAND MASTER ACTIVATION
   this->command(SSD1681::MASTER_ACTIVATION);
 
-  if (!this->wait_until_idle_()) {
+  if (!this->wait_until_idle_(SSD1681::MASTER_ACTIVATION)) {
     this->status_set_warning();
     ESP_LOGE(TAG, "CMD 20 failed");
   }
@@ -2443,7 +2445,7 @@ void HOT WaveshareEPaperSSD1681::display() {
   // COMMAND MASTER ACTIVATION
   this->command(SSD1681::MASTER_ACTIVATION);
 
-  if (!this->wait_until_idle_()) {
+  if (!this->wait_until_idle_(SSD1681::MASTER_ACTIVATION)) {
     this->status_set_warning();
     ESP_LOGE(TAG, "CMD 20 failed");
   }

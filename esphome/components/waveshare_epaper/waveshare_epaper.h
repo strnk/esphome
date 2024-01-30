@@ -686,7 +686,8 @@ typedef enum Command  {
   SET_RAM_X_ADDR_COUNTER = 0x4E,
   SET_RAM_Y_ADDR_COUNTER = 0x4F,
   // 0x50-0x7E
-  NOP
+  NOP,
+  HW_RESET = 0xFF
 } Command_t; // enum Command
 }; // namespace SSD1681
 

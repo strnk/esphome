@@ -2292,10 +2292,13 @@ void WaveshareEPaper2P13InDKE::set_full_update_every(uint32_t full_update_every)
 WaveshareEPaperSSD1681::WaveshareEPaperSSD1681(WaveshareEPaperSSD1681Model model) : model_(model) {}
 
 void WaveshareEPaperSSD1681::initialize() { 
+  this->deep_sleep_between_updates_ = true;
   this->fill(Color::WHITE);
 
   this->reset_();
-  this->deep_sleep_between_updates_ = true;
+  if (!this->wait_until_idle_(SSD1681::HW_RESET)) {
+    this->status_set_warning();
+  }
 
   // SWRESET
   this->command(SSD1681::SW_RESET);  
@@ -2377,13 +2380,13 @@ void HOT WaveshareEPaperSSD1681::display() {
   ESP_LOGI(TAG, "SSD1681: wake-up");
   this->reset_();
 
-  if (!this->wait_until_idle_()) {
+  if (!this->wait_until_idle_(SSD1681::HW_RESET)) {
     this->status_set_warning();
   }
 
   this->command(SSD1681::SW_RESET);
 
-  if (!this->wait_until_idle_()) {
+  if (!this->wait_until_idle_(SSD1681::SW_RESET)) {
     this->status_set_warning();
   }
 
@@ -2401,7 +2404,7 @@ void HOT WaveshareEPaperSSD1681::display() {
   this->command(SSD1681::TEMPERATURE_SENSOR_CONTROL);
   this->data(0x80); // internal sensor
 
-  if (!this->wait_until_idle_()) {
+  if (!this->wait_until_idle_(SSD1681::TEMPERATURE_SENSOR_CONTROL)) {
     this->status_set_warning();
   }
 
@@ -2447,7 +2450,6 @@ void HOT WaveshareEPaperSSD1681::display() {
 
   if (!this->wait_until_idle_(SSD1681::MASTER_ACTIVATION)) {
     this->status_set_warning();
-    ESP_LOGE(TAG, "CMD 20 failed");
   }
   else
     this->status_clear_warning();
@@ -2546,7 +2548,7 @@ bool WaveshareEPaperSSD1681::wait_until_idle_(SSD1681::Command_t command) {
   const uint32_t start = millis();
   while (this->busy_pin_->digital_read()) {
     if (millis() - start > this->idle_timeout_(command)) {
-      ESP_LOGE(TAG, "Timeout while displaying image!");
+      ESP_LOGE(TAG, "Timeout during CMD %02x", (uint8_t)command);
       return false;
     }
     delay(10);
